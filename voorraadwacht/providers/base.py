@@ -38,7 +38,9 @@ class Provider:
         try:
             response = requests.request(method, url, **kwargs)
         except requests.RequestException as exc:
-            raise ProviderError(f"{self.name}: verbinding mislukt ({exc})") from exc
+            # querystring weglaten: die kan de API-sleutel bevatten
+            detail = re.sub(r"\?[^\s)'\"]*", "", str(exc))
+            raise ProviderError(f"{self.name}: verbinding mislukt ({detail})") from exc
         if response.status_code >= 400:
             raise ProviderError(f"{self.name}: HTTP {response.status_code} – {response.text[:200]}")
         try:
