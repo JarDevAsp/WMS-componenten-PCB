@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>{{ 'Bestelling bewerken' if order.id else 'Nieuwe bestelling' }}</h1>
+{% if not components %}
+  <div class="flash error">Voeg eerst een <a href="{{ url_for('main.component_new') }}">component</a> toe.</div>
+{% else %}
+<form method="post" class="card">
+  <div class="grid">
+    <label>Component *
+      <select name="component_id" required>
+        <option value="">– kies –</option>
+        {% for c in components %}<option value="{{ c.id }}" {% if c.id == order.component_id %}selected{% endif %}>{{ c.mpn }}{% if c.manufacturer %} ({{ c.manufacturer }}){% endif %}</option>{% endfor %}
+      </select></label>
+    <label>Leverancier *<input name="supplier" required list="supplier-list" value="{{ order.supplier or '' }}"></label>
+    <datalist id="supplier-list">{% for p in providers.values() if p.key != 'demo' %}<option value="{{ p.name }}">{% endfor %}</datalist>
+    <label>Ordernummer<input name="order_number" value="{{ order.order_number or '' }}"></label>
+    <label>Aantal *<input name="quantity" type="number" min="1" required value="{{ order.quantity or '' }}"></label>
+    <label>Stukprijs<input name="unit_price" inputmode="decimal" value="{{ order.unit_price if order.unit_price is not none else '' }}"></label>
+    <label>Munt<input name="currency" value="{{ order.currency or 'EUR' }}"></label>
+    <label>Verzendkosten<input name="shipping_cost" inputmode="decimal" value="{{ order.shipping_cost if order.shipping_cost is not none else '' }}"></label>
+    <label>Besteldatum<input name="order_date" type="date" value="{{ order.order_date.isoformat() if order.order_date else '' }}"></label>
+    <label>Levertermijn (dagen)<input name="lead_time_days" type="number" min="0" value="{{ order.lead_time_days if order.lead_time_days is not none else '' }}"></label>
+    <label>Verwachte leverdatum<input name="expected_date" type="date" value="{{ order.expected_date.isoformat() if order.expected_date else '' }}">
+      <span class="muted">Leeg = besteldatum + levertermijn</span></label>
+    <label>Status
+      <select name="status">{% for s in order_statuses %}<option {% if s == order.status %}selected{% endif %}>{{ s }}</option>{% endfor %}</select></label>
+    <label>Ontvangen op<input name="received_date" type="date" value="{{ order.received_date.isoformat() if order.received_date else '' }}"></label>
+    <label class="full">Notities<textarea name="notes" rows="3">{{ order.notes or '' }}</textarea></label>
+  </div>
+  <div class="actions">
+    <button class="primary">Opslaan</button>
+    <a class="btn" href="{{ url_for('main.orders') }}">Annuleren</a>
+  </div>
+</form>
+{% if order.id %}
+<form method="post" action="{{ url_for('main.order_delete', order_id=order.id) }}" onsubmit="return confirm('Bestelling verwijderen?')">
+  <button class="danger">Bestelling verwijderen</button>
+</form>
+{% endif %}
+{% endif %}
+{% endblock %}

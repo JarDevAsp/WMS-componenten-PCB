@@ -1,0 +1,7 @@
+{% macro stock_badge(watch, threshold=None) -%}
+  {% if watch.stock is none %}<span class="badge">nog niet opgehaald</span>
+  {% elif watch.stock == 0 %}<span class="badge bad">0</span>
+  {% elif threshold is not none and watch.stock < threshold %}<span class="badge warn">{{ watch.stock }}</span>
+  {% else %}<span class="badge ok">{{ watch.stock }}</span>{% endif %}
+  {% if watch.last_error %}<span class="badge bad" title="{{ watch.last_error }}">fout</span>{% endif %}
+{%- endmacro %}

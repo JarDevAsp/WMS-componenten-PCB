@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>{{ 'Component bewerken' if component.id else 'Nieuw component' }}</h1>
+<form method="post" class="card">
+  <div class="grid">
+    <label>Fabrikant-artikelnummer (MPN) *<input name="mpn" required value="{{ component.mpn or '' }}" placeholder="bv. STM32F103C8T6"></label>
+    <label>Fabrikant<input name="manufacturer" value="{{ component.manufacturer or '' }}"></label>
+    <label class="full">Omschrijving<input name="description" value="{{ component.description or '' }}"></label>
+    <label>Alarmdrempel (stuks)<input name="alert_threshold" type="number" min="0" value="{{ component.alert_threshold if component.alert_threshold is not none else '' }}" placeholder="optioneel"></label>
+    <label class="full">Notities<textarea name="notes" rows="3">{{ component.notes or '' }}</textarea></label>
+  </div>
+  {% if not component.id %}
+  <h2>Opvolgen bij</h2>
+  <div class="actions">
+    {% for key, p in providers.items() %}
+      <label><input type="checkbox" name="suppliers" value="{{ key }}" {% if p.is_configured() and key != 'demo' %}checked{% endif %}>
+        {{ p.name }}{% if not p.is_configured() %} <span class="muted">(geen API-sleutel)</span>{% endif %}</label>
+    {% endfor %}
+  </div>
+  <p class="muted">Het leveranciersnummer kan je nadien per leverancier toevoegen; zonder nummer wordt op MPN gezocht.</p>
+  {% endif %}
+  <div class="actions">
+    <button class="primary">Opslaan</button>
+    <a class="btn" href="{{ url_for('main.component_detail', component_id=component.id) if component.id else url_for('main.dashboard') }}">Annuleren</a>
+  </div>
+</form>
+{% endblock %}

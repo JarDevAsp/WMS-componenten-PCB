@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% from "_stock.html" import stock_badge %}
+{% block content %}
+<h1>{{ component.mpn }} <span class="muted">{{ component.manufacturer or '' }}</span></h1>
+<p>{{ component.description or '' }}
+  {% if component.alert_threshold is not none %}<br><span class="muted">Alarmdrempel: {{ component.alert_threshold }} stuks</span>{% endif %}</p>
+{% if component.notes %}<p class="muted">{{ component.notes }}</p>{% endif %}
+<div class="actions">
+  <form class="inline" method="post" action="{{ url_for('main.component_check', component_id=component.id) }}"><button class="primary">Nu controleren</button></form>
+  <a class="btn" href="{{ url_for('main.component_edit', component_id=component.id) }}">Bewerken</a>
+  <a class="btn" href="{{ url_for('main.order_new', component_id=component.id) }}">+ Bestelling</a>
+  <form class="inline" method="post" action="{{ url_for('main.component_delete', component_id=component.id) }}" onsubmit="return confirm('Component en alle gegevens verwijderen?')"><button class="danger">Verwijderen</button></form>
+</div>
+
+<h2>Leveranciers</h2>
+<div class="card">
+<table>
+  <tr><th>Leverancier</th><th>Bestelnr.</th><th class="num">Voorraad</th><th class="num">Prijs (1 st.)</th><th>Levertermijn</th><th>Laatst gecontroleerd</th><th>Laatst gewijzigd</th><th></th></tr>
+  {% for w in component.watches %}
+  <tr {% if not w.active %}class="muted"{% endif %}>
+    <td>{% if w.product_url %}<a href="{{ w.product_url }}" target="_blank" rel="noopener">{{ supplier_name(w.supplier) }}</a>{% else %}{{ supplier_name(w.supplier) }}{% endif %}
+      {% if not w.active %}<span class="badge">gepauzeerd</span>{% endif %}</td>
+    <td>{{ w.supplier_sku or '–' }}</td>
+    <td class="num">{{ stock_badge(w, component.alert_threshold) }}</td>
+    <td class="num">{{ w.unit_price|money(w.currency) }}</td>
+    <td>{{ w.lead_time or '–' }}</td>
+    <td>{{ w.last_checked|dt }}</td>
+    <td>{{ w.last_changed|dt }}</td>
+    <td>
+      <form class="inline" method="post" action="{{ url_for('main.watch_toggle', watch_id=w.id) }}"><button class="small">{{ 'Pauzeren' if w.active else 'Hervatten' }}</button></form>
+      <form class="inline" method="post" action="{{ url_for('main.watch_delete', watch_id=w.id) }}"><button class="small danger">×</button></form>
+    </td>
+  </tr>
+  {% if w.last_error %}<tr><td colspan="8"><span class="badge bad">fout</span> <span class="muted">{{ w.last_error }}</span></td></tr>{% endif %}
+  {% endfor %}
+</table>
+<form method="post" action="{{ url_for('main.watch_add', component_id=component.id) }}" class="actions">
+  <select name="supplier" style="width:auto">{% for key, p in providers.items() %}<option value="{{ key }}">{{ p.name }}</option>{% endfor %}</select>
+  <input name="supplier_sku" placeholder="Bestelnummer leverancier (optioneel)" style="width:auto;flex:1">
+  <button>Leverancier toevoegen</button>
+</form>
+</div>
+
+<h2>Bestellingen</h2>
+<div class="card">
+{% if component.orders %}
+<table>
+  <tr><th>Besteld</th><th>Leverancier</th><th class="num">Aantal</th><th class="num">Stukprijs</th><th>Verwacht</th><th>Status</th><th></th></tr>
+  {% for o in component.orders|sort(attribute='order_date', reverse=true) %}
+  <tr>
+    <td>{{ o.order_date|d }}</td><td>{{ o.supplier }}</td><td class="num">{{ o.quantity }}</td>
+    <td class="num">{{ o.unit_price|money(o.currency) }}</td>
+    <td>{{ o.expected|d }} {% if o.is_overdue %}<span class="badge bad">te laat</span>{% endif %}</td>
+    <td><span class="badge">{{ o.status }}</span></td>
+    <td><a href="{{ url_for('main.order_edit', order_id=o.id) }}">bewerken</a></td>
+  </tr>
+  {% endfor %}
+</table>
+{% else %}<p class="muted">Geen bestellingen.</p>{% endif %}
+</div>
+
+<h2>Voorraadhistoriek</h2>
+<div class="card">
+{% set history = [] %}
+{% for w in component.watches %}{% for s in w.snapshots[:50] %}{% set _ = history.append(s) %}{% endfor %}{% endfor %}
+{% if history %}
+<table>
+  <tr><th>Tijdstip</th><th>Leverancier</th><th class="num">Voorraad</th><th class="num">Prijs</th></tr>
+  {% for s in history|sort(attribute='checked_at', reverse=true) %}
+  <tr><td>{{ s.checked_at|dt }}</td><td>{{ supplier_name(s.watch.supplier) }}</td><td class="num">{{ s.stock }}</td><td class="num">{{ s.unit_price|money(s.currency) }}</td></tr>
+  {% endfor %}
+</table>
+{% else %}<p class="muted">Nog geen metingen.</p>{% endif %}
+</div>
+{% endblock %}

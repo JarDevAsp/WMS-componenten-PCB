@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Bestellingen</h1>
+<div class="actions" style="margin:0 0 12px">
+  <a class="btn {{ 'primary' if show == 'open' }}" href="{{ url_for('main.orders', toon='open') }}">Openstaand</a>
+  <a class="btn {{ 'primary' if show != 'open' }}" href="{{ url_for('main.orders', toon='alle') }}">Alle</a>
+  <a class="btn" href="{{ url_for('main.order_new') }}">+ Nieuwe bestelling</a>
+</div>
+<div class="card">
+{% if orders %}
+<table>
+  <tr><th>Besteld</th><th>Component</th><th>Leverancier</th><th>Ordernr.</th><th class="num">Aantal</th><th class="num">Stukprijs</th><th class="num">Totaal</th><th>Levertermijn</th><th>Verwacht</th><th>Status</th><th></th></tr>
+  {% for o in orders %}
+  <tr>
+    <td>{{ o.order_date|d }}</td>
+    <td><a href="{{ url_for('main.component_detail', component_id=o.component_id) }}">{{ o.component.mpn }}</a></td>
+    <td>{{ o.supplier }}</td>
+    <td>{{ o.order_number or '–' }}</td>
+    <td class="num">{{ o.quantity }}</td>
+    <td class="num">{{ o.unit_price|money(o.currency) }}</td>
+    <td class="num">{{ o.total_cost|money(o.currency) }}</td>
+    <td>{{ (o.lead_time_days ~ ' dagen') if o.lead_time_days is not none else '–' }}</td>
+    <td>{{ o.expected|d }} {% if o.is_overdue %}<span class="badge bad">te laat</span>{% endif %}
+      {% if o.received_date %}<br><span class="muted">ontvangen {{ o.received_date|d }}</span>{% endif %}</td>
+    <td><span class="badge {{ 'ok' if o.status == 'ontvangen' }}">{{ o.status }}</span></td>
+    <td>
+      <a href="{{ url_for('main.order_edit', order_id=o.id) }}">bewerken</a>
+      {% if o.is_open %}<form class="inline" method="post" action="{{ url_for('main.order_received', order_id=o.id) }}"><button class="small">Ontvangen</button></form>{% endif %}
+    </td>
+  </tr>
+  {% endfor %}
+</table>
+{% else %}<p class="muted">Geen bestellingen.</p>{% endif %}
+</div>
+{% endblock %}

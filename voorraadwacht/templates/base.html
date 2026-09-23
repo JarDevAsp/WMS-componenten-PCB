@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Voorraadwacht{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<header>
+  <a class="brand" href="{{ url_for('main.dashboard') }}">Voorraadwacht</a>
+  <a href="{{ url_for('main.dashboard') }}">Overzicht</a>
+  <a href="{{ url_for('main.component_new') }}">+ Component</a>
+  <a href="{{ url_for('main.orders') }}">Bestellingen</a>
+  <a href="{{ url_for('main.order_new') }}">+ Bestelling</a>
+  <form method="post" action="{{ url_for('main.check_all') }}"><button class="small">Alles nu controleren</button></form>
+</header>
+<main>
+  {% for category, message in get_flashed_messages(with_categories=true) %}
+    <div class="flash {{ category }}">{{ message }}</div>
+  {% endfor %}
+  {% block content %}{% endblock %}
+</main>
+</body>
+</html>

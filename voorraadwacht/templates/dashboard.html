@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% from "_stock.html" import stock_badge %}
+{% block content %}
+<h1>Overzicht</h1>
+{% if errors %}<div class="flash error">{{ errors }} opvolging(en) gaven een fout bij de laatste controle – zie het component voor details.</div>{% endif %}
+
+<h2>Verwachte leveringen</h2>
+<div class="card">
+{% if open_orders %}
+<table>
+  <tr><th>Verwacht</th><th>Component</th><th>Leverancier</th><th class="num">Aantal</th><th>Status</th><th></th></tr>
+  {% for o in open_orders %}
+  <tr>
+    <td>{{ o.expected|d }} {% if o.is_overdue %}<span class="badge bad">te laat</span>{% endif %}</td>
+    <td><a href="{{ url_for('main.component_detail', component_id=o.component_id) }}">{{ o.component.mpn }}</a></td>
+    <td>{{ o.supplier }} {% if o.order_number %}<span class="muted">#{{ o.order_number }}</span>{% endif %}</td>
+    <td class="num">{{ o.quantity }}</td>
+    <td><span class="badge">{{ o.status }}</span></td>
+    <td><form class="inline" method="post" action="{{ url_for('main.order_received', order_id=o.id) }}"><button class="small">Ontvangen</button></form></td>
+  </tr>
+  {% endfor %}
+</table>
+{% else %}<p class="muted">Geen openstaande bestellingen.</p>{% endif %}
+</div>
+
+<h2>Voorraad bij leveranciers</h2>
+<div class="card">
+{% if components %}
+<table>
+  <tr><th>Component</th><th>Omschrijving</th>
+    {% for key in columns %}<th class="num">{{ supplier_name(key) }}</th>{% endfor %}
+    <th class="num">Onderweg</th></tr>
+  {% for c in components %}
+  {% set by_supplier = {} %}
+  {% for w in c.watches if w.active %}{% set _ = by_supplier.update({w.supplier: w}) %}{% endfor %}
+  <tr>
+    <td><a href="{{ url_for('main.component_detail', component_id=c.id) }}">{{ c.mpn }}</a><br><span class="muted">{{ c.manufacturer or '' }}</span></td>
+    <td class="muted">{{ c.description or '' }}</td>
+    {% for key in columns %}
+      <td class="num">{% if key in by_supplier %}{{ stock_badge(by_supplier[key], c.alert_threshold) }}{% else %}<span class="muted">–</span>{% endif %}</td>
+    {% endfor %}
+    <td class="num">{{ c.incoming_quantity or '–' }}</td>
+  </tr>
+  {% endfor %}
+</table>
+{% else %}<p class="muted">Nog geen componenten. <a href="{{ url_for('main.component_new') }}">Voeg er een toe</a>.</p>{% endif %}
+</div>
+{% endblock %}
