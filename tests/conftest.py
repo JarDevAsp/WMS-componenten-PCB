@@ -10,6 +10,7 @@ def app(tmp_path):
         "TESTING": True,
         "SQLALCHEMY_DATABASE_URI": f"sqlite:///{tmp_path / 'test.db'}",
         "SMTP_HOST": "",
+        "MOUSER_API_KEY": "", "FARNELL_API_KEY": "", "TME_TOKEN": "", "DIGIKEY_CLIENT_ID": "",
         "BASIC_AUTH_USER": "",
         "BASIC_AUTH_PASSWORD": "",
     })
